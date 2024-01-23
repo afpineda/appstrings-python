@@ -1,8 +1,10 @@
 # ****************************************************************************
-#  @author Ángel Fernández Pineda. Madrid. Spain.
-#  @date 2024-01-22
-#  @brief Translation utility
-#  @copyright Creative Commons Attribution 4.0 International (CC BY 4.0)
+# @file appstrings.py
+#
+# @author Ángel Fernández Pineda. Madrid. Spain.
+# @date 2024-01-22
+# @brief Translation utility
+# @copyright Creative Commons Attribution 4.0 International (CC BY 4.0)
 # *****************************************************************************
 
 """
@@ -11,6 +13,17 @@ Minimal strings translation library for Python
 This is not a full internationalization library,
 nor suitable for usual translation workflows.
 Make sure it meets your needs.
+
+Functions:
+    gettext(): Returns a translated string
+    install(): Install an enumeration as a translator
+    set_translation_locale(): Set a locale for translation
+    get_translation_locale(): Get current locale used for translation
+
+
+Exceptions:
+    TranslatorException: for invalid language translators
+
 """
 
 # *****************************************************************************
@@ -94,13 +107,13 @@ def __check_string_ids(cls1: Enum, cls2: Enum):
     if cls1 != cls2:
         for id in cls1:
             attr_name = id._name_
-            if not hasattr(cls2, attr_name):  # and (attr_name != "_lang"):
+            if not hasattr(cls2, attr_name):
                 raise TranslatorException(
-                    f"String ID '{attr_name}' from '{cls1.__name__} is missing at '{cls1.__name__}'"
+                    f"String ID '{attr_name}' from '{cls1.__name__} is missing at '{cls2.__name__}'"
                 )
         for id in cls2:
             attr_name = id._name_
-            if not hasattr(cls1, attr_name):  # and (attr_name != "_lang"):
+            if not hasattr(cls1, attr_name):
                 raise TranslatorException(
                     f"String ID '{attr_name}' from '{cls2.__name__} is missing at '{cls1.__name__}'"
                 )
@@ -112,7 +125,14 @@ def __check_string_ids(cls1: Enum, cls2: Enum):
 
 
 def gettext(id) -> str:
-    """Get a translated string"""
+    """Return a translated string
+
+    Args:
+        id (Enumeration attribute): Identifier of the string to translate
+
+    Returns:
+        str: Translated string
+    """
     global __current_translator
     global __first_call
     if __first_call:
@@ -126,9 +146,11 @@ def gettext(id) -> str:
 def install(translator: Enum):
     """Install an enumeration as a translator
 
-    The given translator must define a "_lang" attribute containing
-    a locale string or language string. For example:
-    "en" or "en_US"
+    Args:
+        translator (Enum): An enumeration to work as a translator.
+                           Must define a "_lang" attribute containing
+                           a locale string or language string. For example:
+                           "en" or "en_US"
 
     Raises:
         TranslatorException: The given translator is not valid
@@ -148,11 +170,11 @@ def install(translator: Enum):
 
 
 def set_translation_locale(locale_str: str = None):
-    """Set current locale for translation
+    """Set a locale for translation
 
     Args:
-        lang (str): A locale string. For example, "en_US".
-        If not given, system locale is used.
+        locale_str (str): A locale string. For example, "en_US".
+                          If not given, system locale is used.
 
     Remarks:
         Not mandatory. If not called, current system locale is used.
@@ -164,7 +186,7 @@ def set_translation_locale(locale_str: str = None):
 
 
 def get_translation_locale() -> str:
-    """Get current locale for translation
+    """Get current locale used for translation
 
     Returns:
         str: Locale string
@@ -186,11 +208,16 @@ def get_translation_locale() -> str:
 
 _reset()
 
+# *****************************************************************************
+# Automated Test
+# *****************************************************************************
+
 if __name__ == "__main__":
     print("----------------------------------")
     print("Automated test")
     print("----------------------------------")
-    print(f"Current language: {get_translation_locale()}")
+    system_locale = getlocale()[0]
+    print(f"Current language: {system_locale}")
 
     class EN(Enum):
         _lang = "en"
@@ -213,47 +240,50 @@ if __name__ == "__main__":
     class Error3(Enum):
         _lang = "pt_"
 
+    print("Testing custom translation locale")
+    set_translation_locale("ch")
+    if get_translation_locale() != "ch":
+        print("Failure: 'ch' not set")
+    set_translation_locale()
+    if get_translation_locale() != system_locale:
+        print("Failure: system locale not set")
+    print("Done")
+
     print("Testing invalid translator installation")
-    notOk = True
+    _reset()
     try:
         install(Error1)
-    except:
-        notOk = False
-    if notOk:
         print("Failure: Class Error1 should not install")
+    except:
+        pass
 
     _reset()
-    notOk = True
     try:
         install(EN)
         install(Error2)
-    except:
-        notOk = False
-    if notOk:
         print("Failure: Class Error2 should not install")
+    except:
+        pass
 
     _reset()
-    notOk = True
     try:
         install(Error3)
-    except:
-        notOk = False
-    if notOk:
         print("Failure: Class Error3 should not install")
+    except:
+        pass
 
     print("Done")
 
     print("Testing no default translator")
     _reset()
 
-    notOk = True
     try:
         t = gettext(EN.TEST)
         if t != EN.TEST._value_:
-            print("Failure")
+            print("Failure at EN.TEST")
         t = gettext(ES.TEST)
         if t != ES.TEST._value_:
-            print("Failure")
+            print("Failure at ES.TEST")
     except:
         print("Failure due to exception")
     print("Done")
