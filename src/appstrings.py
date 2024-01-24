@@ -20,6 +20,7 @@ Functions:
     install(): Install an enumeration as a translator
     set_translation_locale(): Set a locale for translation
     get_translation_locale(): Get current locale used for translation
+    get_installed_translators(): Retrieve a list of all installed translators
 
 
 Exceptions:
@@ -361,12 +362,13 @@ if __name__ == "__main__":
 
     print("Testing enumeration of installed translators")
     _reset()
+    install(EN)
     install(ES)
     install(ES_MX)
     l = get_installed_translators()
     if len(l) != 2:
         print("Failure.")
-    print(" Printing for eye-review")
+    print(" Printing for eye-review:")
     for t in l:
         print(f"  {t._lang._value_}")
     print("Done")

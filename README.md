@@ -29,11 +29,11 @@ from enum import Enum
 
 class EN(Enum):
     _lang = "en"
-    TEST = "English, all countries"
+    TEST = "Hello world!"
 
 class ES_MX(Enum):
     _lang = "es_MX"
-    TEST = "Spanish, Mexico"
+    TEST = "¡Hola mundo!"
 ```
 
 Those enumerations are called **translators** in the context of this library.
@@ -54,7 +54,7 @@ Use that notation for non-translatable attributes if you need to. For example:
 class ES_MX(Enum):
     _lang = "es_MX"
     _note = "this is a developer note, not to be translated"
-    TEST = "Spanish, Mexico"
+    TEST = "¡Hola mundo!"
 ```
 
 ### Use already translated text
