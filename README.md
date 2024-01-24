@@ -17,10 +17,18 @@ If not, there are other libraries that do the job, for example,
 ### Translate text for each locale
 
 Define all translatable strings in an enumeration class.
-You **must** also define a `_lang` attribute and set its value
-to the corresponding locale or language string.
-A list of valid locale strings can be found at
-[saimana.com](https://saimana.com/list-of-country-locale-code/).
+Those enumerations are called **translators** in the context of this library.
+Additionally:
+
+- You **must** also define a `_lang` attribute and set its value
+  to the corresponding locale or language string.
+  A list of valid locale strings can be found at
+  [saimana.com](https://saimana.com/list-of-country-locale-code/).
+- You **should** also define a `_domain` attribute and set its value
+  to your application's name or any other random string. This prevents any conflict
+  with translators from other libraries (if any). If not given, current
+  module name is used, so you must create all your translators in the same module
+  in that case.
 
 For example:
 
@@ -29,15 +37,16 @@ from enum import Enum
 
 class EN(Enum):
     _lang = "en"
+    _domain = "appstrings.example"
     TEST = "Hello world!"
 
 class ES_MX(Enum):
     _lang = "es_MX"
+    _domain = "appstrings.example"
     TEST = "¡Hola mundo!"
 ```
 
-Those enumerations are called **translators** in the context of this library.
-In order to use them, you must "install" all of them at initialization:
+Then, all translators must be "installed" at initialization:
 
 ```python
 from appstrings import install
@@ -53,9 +62,13 @@ Use that notation for non-translatable attributes if you need to. For example:
 ```python
 class ES_MX(Enum):
     _lang = "es_MX"
+    _domain = "appstrings.example"
     _note = "this is a developer note, not to be translated"
     TEST = "¡Hola mundo!"
 ```
+
+Note that another library imported in your project may use *appstrings* as well, thus installing its own translators.
+Use the *_domain* attribute to prevent any conflict.
 
 ### Use already translated text
 
@@ -101,8 +114,7 @@ then force the system locale again:
 set_translation_locale()
 ```
 
-Note that `set_translation_locale()` is mostly for testing purposes.
-Forcing a specific locale not available in your application will not *magically* translate your strings to that locale.
+Note that forcing a specific locale not available in your application will not *magically* translate your strings to that locale.
 
 ### Fallback to a default language
 
@@ -124,13 +136,22 @@ print(_(STR.TEST)) # Prints TEST string in spanish if there is no matching trans
 ```
 
 This approach is developer-friendly, but not user-friendly.
-Your application should allow the user to choose another default language
+Your application should allow the user to choose a language
 via command-line parameters, environment variables or other means.
 
 The function `get_installed_translators()` will help in order to show a list of
-available languages.
+available languages:
 
-### Organize your code
+```python
+print("Available languages/locales:")
+for translator in get_installed_translators(EN._domain):
+    print(translator._lang._value_)
+```
+
+Obviously, you already know which languages are available in your application,
+but this approach ensures you don't have to modify your code after adding a new translator.
+
+### Organize your code for translation
 
 You may spread your translators along many source files as long as your application imports and installs them.
 
@@ -170,6 +191,7 @@ from appstrings import install
 
 class CertainTranslator(Enum):
     _lang = ...
+    _domain = ...
     TEXT1 = ...
     TEXT2 = ...
     ...
@@ -178,3 +200,9 @@ install(CertainTranslator)
 ```
 
 That is all about this library. As simple as that.
+
+### Troubleshooting
+
+- Why some strings are properly translated, but not others?
+
+  Ensure all your translators have a *_domain* attribute set to the very same value (case-sensitive).

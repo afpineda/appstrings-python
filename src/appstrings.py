@@ -39,8 +39,8 @@ from locale import getlocale, setlocale, LC_ALL
 # "private" global variables
 # *****************************************************************************
 
-__translators = []
-__current_translator = None
+__translators = {}
+__current_translator = {}
 __first_call = True
 
 # *****************************************************************************
@@ -77,15 +77,16 @@ def _reset():
     global __first_call
     setlocale(LC_ALL, "")
     __current_locale = _decode_locale(getlocale()[0])
-    __translators = []
-    __current_translator = None
+    __translators = {}
+    __current_translator = {}
     __first_call = True
 
 
-def _match_installed_translator(current_lang: str, current_country: str) -> Enum:
+def _match_installed_translator(domain: str, current_lang: str, current_country: str) -> Enum:
     result = None
     global __translators
-    for translator in __translators:
+    translator_list = __translators[domain]
+    for translator in translator_list:
         translator_locale = _decode_locale(translator._lang._value_)
         translator_lang = translator_locale[0]
         translator_country = translator_locale[1]
@@ -107,7 +108,9 @@ def __initialize():
         raise TranslatorException("Current locale is unknown")
     current_lang = __current_locale[0]
     current_country = __current_locale[1]
-    __current_translator = _match_installed_translator(current_lang, current_country)
+    for domain in __translators.keys():
+        translator = _match_installed_translator(domain, current_lang, current_country)
+        __current_translator[domain] = translator
 
 
 def __check_string_ids(cls1: Enum, cls2: Enum):
@@ -146,8 +149,9 @@ def gettext(id) -> str:
     global __first_call
     if __first_call:
         __initialize()
-    if __current_translator:
-        return getattr(__current_translator, id._name_)._value_
+    domain = id.__class__._domain._value_ if hasattr(id.__class__,"_domain") else id.__class__.__module__
+    if (domain in __current_translator) and __current_translator[domain]:
+        return getattr(__current_translator[domain], id._name_)._value_
     else:
         return id._value_
 
@@ -159,7 +163,9 @@ def install(translator: Enum):
         translator (Enum): An enumeration to work as a translator.
                            Must define a "_lang" attribute containing
                            a locale string or language string. For example:
-                           "en" or "en_US"
+                           "en" or "en_US". Should also define a "_domain"
+                           attribute containing an application-specific
+                           identifier (as a string).
 
     Raises:
         TranslatorException: The given translator is not valid
@@ -172,10 +178,13 @@ def install(translator: Enum):
             f"{translator.__name__} is missing the '_lang' attribute"
         )
     _decode_locale(translator._lang._value_)
-    if translator not in __translators:
-        if len(__translators) > 0:
-            __check_string_ids(translator, __translators[0])
-        __translators.append(translator)
+    domain = translator._domain._value_ if hasattr(translator,"_domain") else translator.__module__
+    if domain not in __translators:
+        __translators[domain] = []
+    if translator not in __translators[domain]:
+        if len(__translators[domain]) > 0:
+            __check_string_ids(translator, __translators[domain][0])
+        __translators[domain].append(translator)
 
 
 def set_translation_locale(locale_str: str = None):
@@ -209,10 +218,21 @@ def get_translation_locale() -> str:
     return result
 
 
-def get_installed_translators() -> list:
-    """Retrieve a list of all installed translators"""
+def get_installed_translators(domain: str) -> list:
+    """Retrieve a list of all installed translators
+
+    Args:
+        domain (str): The domain of your application
+
+    Returns:
+        list: All translators for the given domain or
+              an empty list if the given domain is unknown.
+    """
     global __translators
-    return __translators.copy()
+    if (domain in __translators):
+        return __translators[domain].copy()
+    else:
+        return []
 
 
 # *****************************************************************************
@@ -227,7 +247,7 @@ _reset()
 
 if __name__ == "__main__":
     print("----------------------------------")
-    print("Automated test")
+    print("appstrings: Automated test")
     print("----------------------------------")
     system_locale = getlocale()[0]
     print(f"Current language: {system_locale}")
@@ -253,6 +273,18 @@ if __name__ == "__main__":
 
     class Error3(Enum):
         _lang = "pt_"
+
+    class EN2(Enum):
+        _lang = "en"
+        _domain = "test"
+        TEST = "EN2"
+        OTHER = "English"
+
+    class ES2(Enum):
+        _lang = "es"
+        _domain = "test"
+        TEST = "ES2"
+        OTHER = "Spanish"
 
     print("Testing custom translation locale")
     set_translation_locale("ch")
@@ -360,16 +392,47 @@ if __name__ == "__main__":
         print("Failure")
     print("Done")
 
+    print("Testing installation of translators in different domains")
+    try:
+        install(EN)
+        install(EN2)
+        install(ES2)
+    except:
+        print("Failure")
+    print("Done")
+
     print("Testing enumeration of installed translators")
     _reset()
     install(EN)
     install(ES)
     install(ES_MX)
-    l = get_installed_translators()
+    install(EN2)
+    install(ES2)
+    print(" Domain: __main__")
+    l = get_installed_translators("__main__")
+    if len(l) != 3:
+        print("Failure.")
+    print("  Printing for eye-review:")
+    for t in l:
+        print(f"   {t._lang._value_}")
+    print(" Domain: test")
+    l = get_installed_translators("test")
     if len(l) != 2:
         print("Failure.")
-    print(" Printing for eye-review:")
+    print("  Printing for eye-review:")
     for t in l:
-        print(f"  {t._lang._value_}")
+        print(f"   {t._lang._value_}")
     print("Done")
+
+    print("Testing translation in different domains")
+    _reset()
+    install(EN)
+    install(ES2)
+    set_translation_locale("es")
+    if gettext(EN.TEST)!=EN.TEST._value_:
+        print("Failure #1.")
+    if gettext(EN2.TEST)!=ES2.TEST._value_:
+        print("Failure #2.")
+    print("Done")
+
     print("----------------------------------")
