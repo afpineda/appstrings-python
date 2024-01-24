@@ -1,16 +1,26 @@
 # Minimal string translation library for Python
 
-This is not a full internationalization library, nor suitable for usual translation workflows.
+In summary:
+
+- Developers reference translatable strings using identifiers in an enumeration class.
+- Language-specific strings are written in several enumeration classes.
+- The library transparently transforms string identifiers into already translated strings,
+  depending on the system locale or user-selected locale.
+
+This is neither a full internationalization library nor suitable for usual translation workflows.
 Make sure it meets your needs.
 If not, there are other libraries that do the job, for example,
 [gettext](https://docs.python.org/3/library/gettext.html).
 
 ## How to use
 
+### Translate text for each locale
+
 Define all translatable strings in an enumeration class.
 You **must** also define a `_lang` attribute and set its value
 to the corresponding locale or language string.
-A list of valid locale strings can be found at [saimana.com](https://saimana.com/list-of-country-locale-code/).
+A list of valid locale strings can be found at
+[saimana.com](https://saimana.com/list-of-country-locale-code/).
 
 For example:
 
@@ -36,7 +46,18 @@ install(EN)
 install(ES_MX)
 ```
 
-The library will check that all installed translators enumerate the same set of constants.
+The library will check that all installed translators enumerate the same set of constants,
+except for "sunder" and "dunder" ones.
+Use that notation for non-translatable attributes if you need to. For example:
+
+```python
+class ES_MX(Enum):
+    _lang = "es_MX"
+    _note = "this is a developer note, not to be translated"
+    TEST = "Spanish, Mexico"
+```
+
+### Use already translated text
 
 The function `gettext()` is used for translation. For example:
 
@@ -54,14 +75,24 @@ _ = gettext
 print(_(EN.TEST)) # Print translated string, depending on current locale
 ```
 
+This way, you may disable translation at any time for development purposes:
+
+```python
+# _ = gettext
+
+_ = lambda id: id._value_
+
+print(_(EN.TEST)) # Always print all strings in english, for now
+```
+
 The library chooses the best-matching translator for the current translation locale, which is initialized from `locale.getlocale()`.
-You may force a specific locale for translation:
+You may force a specific locale for translation at any time:
 
 ```python
 from appstrings import set_translation_locale
 
-set_translation_locale("pt_BR")
-print(_(EN.TEST))
+set_translation_locale("es_MX")
+print(_(EN.TEST)) # Prints text in spanish language of Mexico
 ```
 
 then force the system locale again:
@@ -70,11 +101,38 @@ then force the system locale again:
 set_translation_locale()
 ```
 
-In the previous example there is no translator for the locale *pt_BR*. In such a case, the parameter given to `gettext()` will work
-as the **default language** for non-translated locales. In the example, brazilian people would read the text in english.
-However, if you call `print(_(ES_MX.TEST))` instead, brazilian people would read the text in spanish.
+Note that `set_translation_locale()` is mostly for testing purposes.
+Forcing a specific locale not available in your application will not *magically* translate your strings to that locale.
 
-You may spread your translators along many source files as long as your application imports them.
+### Fallback to a default language
+
+In the previous examples, there is no translator for the locale *pt_BR*, to say one.
+In such a case, the translator used in `gettext()` will work as the **default language** for non-translated locales.
+In the early example, brazilian people would read the text in english.
+However, if `print(_(ES_MX.TEST))` were used instead, brazilian people would read the text in spanish.
+
+The ability to change the default language at any time comes from aliases:
+
+```python
+STR = EN
+
+print(_(STR.TEST)) # Prints TEST string in english if there is no matching translator
+
+STR = ES_MX
+
+print(_(STR.TEST)) # Prints TEST string in spanish if there is no matching translator
+```
+
+This approach is developer-friendly, but not user-friendly.
+Your application should allow the user to choose another default language
+via command-line parameters, environment variables or other means.
+
+The function `get_installed_translators()` will help in order to show a list of
+available languages.
+
+### Organize your code
+
+You may spread your translators along many source files as long as your application imports and installs them.
 
 For example:
 
@@ -119,14 +177,4 @@ class CertainTranslator(Enum):
 install(CertainTranslator)
 ```
 
-In the later schema, the ability to change the default language at any time comes from aliases:
-
-```python
-from appstrings import gettext
-# import your translators here
-
-STR = AnyTranslator
-_ = gettext
-
-print(_(STR.TEXT1))
-```
+That is all about this library. As simple as that.

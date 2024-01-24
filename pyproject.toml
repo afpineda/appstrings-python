@@ -1,6 +1,13 @@
+## Build back-end
+
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm>=8"]
+# requires = ["setuptools>=64", "setuptools-scm>=8"]
+# NOTE: dynamic version DOES NOT work (in Windows) due to a bug in setuptools-scm
+# See https://github.com/pypa/setuptools_scm/issues/993
+requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+## Project meta-data for indexers
 
 [project]
 name = "appstrings"
@@ -9,22 +16,31 @@ description = "Minimal string translation library"
 readme = "README.md"
 requires-python = ">=3.11"
 keywords = ["translation", "internationalization", "I18N"]
-license = { file = "LICENSE.md" }
+license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: Python :: 3.11",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Internationalization"
 ]
-dynamic = ["version"]
+# dynamic = ["version"]
+version = "1.0.0"
+
+## Back-end specific configuration
 
 [tool.setuptools]
 py-modules = [
     "appstrings"
 ]
+package-dir = {"" = "src"}
+
+# [tool.setuptools_scm]
+# This table is empty on purpose
+
+
+## Other meta.data
 
 [project.urls]
 Homepage = "https://github.com/afpineda/appstrings-python"
 
-[tool.setuptools_scm]
-# This table is empty on purpose
+

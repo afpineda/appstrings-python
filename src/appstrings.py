@@ -4,7 +4,8 @@
 # @author Ángel Fernández Pineda. Madrid. Spain.
 # @date 2024-01-22
 # @brief Translation utility
-# @copyright Creative Commons Attribution 4.0 International (CC BY 4.0)
+# @copyright 2024. Ángel Fernández Pineda. Madrid. Spain.
+# @license Licensed under the EUPL
 # *****************************************************************************
 
 """
@@ -80,40 +81,45 @@ def _reset():
     __first_call = True
 
 
-def __initialize():
-    global __first_call
+def _match_installed_translator(current_lang: str, current_country: str) -> Enum:
+    result = None
     global __translators
-    global __current_translator
-    global __current_locale
-    __first_call = False
-    __current_translator = None
-    if not __current_locale:
-        raise TranslatorException("Current locale is unknown")
-    current_lang = __current_locale[0]
-    current_country = __current_locale[1]
     for translator in __translators:
         translator_locale = _decode_locale(translator._lang._value_)
         translator_lang = translator_locale[0]
         translator_country = translator_locale[1]
         if translator_lang == current_lang:
             if translator_country == current_country:
-                __current_translator = translator
+                result = translator
                 break
-            if (translator_country == "") or (not __current_translator):
-                __current_translator = translator
+            if (translator_country == "") or (not result):
+                result = translator
+    return result
+
+
+def __initialize():
+    global __first_call
+    global __current_translator
+    global __current_locale
+    __first_call = False
+    if not __current_locale:
+        raise TranslatorException("Current locale is unknown")
+    current_lang = __current_locale[0]
+    current_country = __current_locale[1]
+    __current_translator = _match_installed_translator(current_lang, current_country)
 
 
 def __check_string_ids(cls1: Enum, cls2: Enum):
     if cls1 != cls2:
         for id in cls1:
             attr_name = id._name_
-            if not hasattr(cls2, attr_name):
+            if (attr_name[0] != "_") and (not hasattr(cls2, attr_name)):
                 raise TranslatorException(
                     f"String ID '{attr_name}' from '{cls1.__name__} is missing at '{cls2.__name__}'"
                 )
         for id in cls2:
             attr_name = id._name_
-            if not hasattr(cls1, attr_name):
+            if (attr_name[0] != "_") and (not hasattr(cls1, attr_name)):
                 raise TranslatorException(
                     f"String ID '{attr_name}' from '{cls2.__name__} is missing at '{cls1.__name__}'"
                 )
@@ -182,9 +188,7 @@ def set_translation_locale(locale_str: str = None):
         Not mandatory. If not called, current system locale is used.
     """
     global __current_locale
-    __current_locale = (
-        _decode_locale(locale_str if locale_str else getlocale()[0])
-    )
+    __current_locale = _decode_locale(locale_str if locale_str else getlocale()[0])
 
 
 def get_translation_locale() -> str:
@@ -202,6 +206,12 @@ def get_translation_locale() -> str:
     else:
         result = ""
     return result
+
+
+def get_installed_translators() -> list:
+    """Retrieve a list of all installed translators"""
+    global __translators
+    return __translators.copy()
 
 
 # *****************************************************************************
@@ -223,6 +233,7 @@ if __name__ == "__main__":
 
     class EN(Enum):
         _lang = "en"
+        _desc = "for testing purposes"
         TEST = "English"
 
     class ES(Enum):
@@ -346,5 +357,17 @@ if __name__ == "__main__":
     t = gettext(ES.TEST)
     if t != ES_MX.TEST._value_:
         print("Failure")
+    print("Done")
+
+    print("Testing enumeration of installed translators")
+    _reset()
+    install(ES)
+    install(ES_MX)
+    l = get_installed_translators()
+    if len(l) != 2:
+        print("Failure.")
+    print(" Printing for eye-review")
+    for t in l:
+        print(f"  {t._lang._value_}")
     print("Done")
     print("----------------------------------")
