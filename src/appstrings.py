@@ -92,7 +92,7 @@ def __initialize():
     current_lang = __current_locale[0]
     current_country = __current_locale[1]
     for translator in __translators:
-        translator_locale = _decode_locale(getattr(translator, "_lang")._value_)
+        translator_locale = _decode_locale(translator._lang._value_)
         translator_lang = translator_locale[0]
         translator_country = translator_locale[1]
         if translator_lang == current_lang:
@@ -126,6 +126,8 @@ def __check_string_ids(cls1: Enum, cls2: Enum):
 
 def gettext(id) -> str:
     """Return a translated string
+
+    The best-matching translator for the selected locale is used.
 
     Args:
         id (Enumeration attribute): Identifier of the string to translate
@@ -162,7 +164,7 @@ def install(translator: Enum):
         raise TranslatorException(
             f"{translator.__name__} is missing the '_lang' attribute"
         )
-    _decode_locale(getattr(translator, "_lang")._value_)
+    _decode_locale(translator._lang._value_)
     if translator not in __translators:
         if len(__translators) > 0:
             __check_string_ids(translator, __translators[0])
@@ -181,7 +183,7 @@ def set_translation_locale(locale_str: str = None):
     """
     global __current_locale
     __current_locale = (
-        _decode_locale(locale_str) if locale_str else _decode_locale(getlocale()[0])
+        _decode_locale(locale_str if locale_str else getlocale()[0])
     )
 
 
@@ -345,3 +347,4 @@ if __name__ == "__main__":
     if t != ES_MX.TEST._value_:
         print("Failure")
     print("Done")
+    print("----------------------------------")
