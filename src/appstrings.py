@@ -220,7 +220,9 @@ def set_translation_locale(locale_str: str = None):
         Not mandatory. If not called, current system locale is used.
     """
     global __current_locale
+    global __first_call
     __current_locale = _decode_locale(locale_str if locale_str else getlocale()[0])
+    __first_call = True
 
 
 def get_translation_locale() -> str:
@@ -308,15 +310,6 @@ if __name__ == "__main__":
         TEST = "ES2"
         OTHER = "Spanish"
 
-    print("Testing custom translation locale")
-    set_translation_locale("ch")
-    if get_translation_locale() != "ch":
-        print("Failure: 'ch' not set")
-    set_translation_locale()
-    if get_translation_locale() != system_locale:
-        print("Failure: system locale not set")
-    print("Done")
-
     print("Testing invalid translator installation")
     _reset()
     try:
@@ -356,7 +349,7 @@ if __name__ == "__main__":
         print("Failure due to exception")
     print("Done")
 
-    print("Testing current language")
+    print("Testing current translation language")
     _reset()
     set_translation_locale("en")
     l = get_translation_locale()
@@ -372,6 +365,10 @@ if __name__ == "__main__":
     l = get_translation_locale()
     if l != "pt":
         print("Failure: 'PT' was not set as current language")
+
+    set_translation_locale()
+    if get_translation_locale() != system_locale:
+        print("Failure: system locale not set")
     print("Done")
 
     print("Test translation #1")
@@ -412,6 +409,24 @@ if __name__ == "__main__":
     t = gettext(ES.TEST)
     if t != ES_MX.TEST._value_:
         print("Failure")
+    print("Done")
+
+    print("Test translation #5")
+    _reset()
+    install(EN)
+    install(ES_MX)
+    set_translation_locale("es_MX")
+    t = gettext(EN.TEST)
+    if t != ES_MX.TEST._value_:
+        print("Failure")
+    print("Done")
+    # Do not call _reset() for the following test
+    print("Test translation #6")
+    set_translation_locale("en_US")
+    t = gettext(ES_MX.TEST)
+    if t != EN.TEST._value_:
+        print("Failure")
+
     print("Done")
 
     print("Testing installation of translators in different domains")
