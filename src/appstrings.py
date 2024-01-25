@@ -133,13 +133,13 @@ def __check_string_ids(cls1: Enum, cls2: Enum):
             attr_name = id._name_
             if (attr_name[0] != "_") and (not hasattr(cls2, attr_name)):
                 raise TranslatorException(
-                    f"String ID '{attr_name}' from '{cls1.__name__} is missing at '{cls2.__name__}'"
+                    f"String ID '{attr_name}' from '{cls1.__name__}' is missing at '{cls2.__name__}'"
                 )
         for id in cls2:
             attr_name = id._name_
             if (attr_name[0] != "_") and (not hasattr(cls1, attr_name)):
                 raise TranslatorException(
-                    f"String ID '{attr_name}' from '{cls2.__name__} is missing at '{cls1.__name__}'"
+                    f"String ID '{attr_name}' from '{cls2.__name__}' is missing at '{cls1.__name__}'"
                 )
 
 
