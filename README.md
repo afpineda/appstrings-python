@@ -210,7 +210,7 @@ That is all about this library. As simple as that.
 
 - Why some strings are properly translated, but not others?
 
-  Ensure all your translators have a *_domain* attribute set to the very same value (case-sensitive).
+  - Ensure all your translators have a *_domain* attribute set to the very same value (case-sensitive).
 
 - I get a TranslatorException : *String ID XXX from YYYY is missing at ZZZZ*. Why ?
 
