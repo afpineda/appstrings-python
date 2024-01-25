@@ -136,7 +136,10 @@ print(_(STR.TEST)) # Prints TEST string in spanish if there is no matching trans
 ```
 
 This approach is developer-friendly, but not user-friendly.
-Your application should allow the user to choose a language
+
+### Be user-friendly
+
+Your application should allow the user to choose an available language
 via command-line parameters, environment variables or other means.
 
 The function `get_installed_translators()` will help in order to show a list of
@@ -144,12 +147,14 @@ available languages:
 
 ```python
 print("Available languages/locales:")
-for translator in get_installed_translators(EN._domain):
+for translator in get_installed_translators(STR._domain._value_):
     print(translator._lang._value_)
 ```
 
 Obviously, you already know which languages are available in your application,
 but this approach ensures you don't have to modify your code after adding a new translator.
+
+Call `set_translation_locale()` to make effective the user preference.
 
 ### Organize your code for translation
 

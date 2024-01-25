@@ -29,6 +29,18 @@ Exceptions:
 """
 
 # *****************************************************************************
+# "Exports"
+# *****************************************************************************
+
+__all__ = [
+    "gettext",
+    "install",
+    "set_translation_locale",
+    "get_translation_locale",
+    "get_installed_translators",
+]
+
+# *****************************************************************************
 # Imports
 # *****************************************************************************
 
@@ -82,7 +94,9 @@ def _reset():
     __first_call = True
 
 
-def _match_installed_translator(domain: str, current_lang: str, current_country: str) -> Enum:
+def _match_installed_translator(
+    domain: str, current_lang: str, current_country: str
+) -> Enum:
     result = None
     global __translators
     translator_list = __translators[domain]
@@ -149,7 +163,11 @@ def gettext(id) -> str:
     global __first_call
     if __first_call:
         __initialize()
-    domain = id.__class__._domain._value_ if hasattr(id.__class__,"_domain") else id.__class__.__module__
+    domain = (
+        id.__class__._domain._value_
+        if hasattr(id.__class__, "_domain")
+        else id.__class__.__module__
+    )
     if (domain in __current_translator) and __current_translator[domain]:
         return getattr(__current_translator[domain], id._name_)._value_
     else:
@@ -178,7 +196,11 @@ def install(translator: Enum):
             f"{translator.__name__} is missing the '_lang' attribute"
         )
     _decode_locale(translator._lang._value_)
-    domain = translator._domain._value_ if hasattr(translator,"_domain") else translator.__module__
+    domain = (
+        translator._domain._value_
+        if hasattr(translator, "_domain")
+        else translator.__module__
+    )
     if domain not in __translators:
         __translators[domain] = []
     if translator not in __translators[domain]:
@@ -229,7 +251,7 @@ def get_installed_translators(domain: str) -> list:
               an empty list if the given domain is unknown.
     """
     global __translators
-    if (domain in __translators):
+    if domain in __translators:
         return __translators[domain].copy()
     else:
         return []
@@ -416,7 +438,7 @@ if __name__ == "__main__":
     for t in l:
         print(f"   {t._lang._value_}")
     print(" Domain: test")
-    l = get_installed_translators("test")
+    l = get_installed_translators(EN2._domain._value_)
     if len(l) != 2:
         print("Failure.")
     print("  Printing for eye-review:")
@@ -429,9 +451,9 @@ if __name__ == "__main__":
     install(EN)
     install(ES2)
     set_translation_locale("es")
-    if gettext(EN.TEST)!=EN.TEST._value_:
+    if gettext(EN.TEST) != EN.TEST._value_:
         print("Failure #1.")
-    if gettext(EN2.TEST)!=ES2.TEST._value_:
+    if gettext(EN2.TEST) != ES2.TEST._value_:
         print("Failure #2.")
     print("Done")
 
